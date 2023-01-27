@@ -99,8 +99,16 @@ To be used on a fresh clone of the idp repo"
 and open in a compilation buffer"
   (interactive)
   (compile
-   (concat "cd " (projectile-project-root) " && npx mocha " (eg/project-filename))
+   (concat "cd " (projectile-project-root) " && npx mocha " (idp-project-filename))
    t))
+
+(defun idp-project-filename ()
+  (if buffer-file-name
+      (substring
+       buffer-file-name
+       (length (projectile-project-root))
+       nil)
+    ""))
 
 (defun idp-get-matching-project-files-list (&rest terms)
   "Return a list of current Projectile files that contain TERMS.
