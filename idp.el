@@ -14,6 +14,12 @@
 
 ;;; Code:
 
+(defun idp-get-local-ip ()
+  "Return the string representation of the local ip address."
+  (let* ((get-ip-command "ipconfig getifaddr en0")
+         (command-result (shell-command-to-string get-ip-command)))
+    (string-trim command-result)))
+
 (defvar idp/application-yml (string-replace "<your-local-ip>" (idp-get-local-ip) "development:
   config_key:
   #domain_name: <your-local-ip>:3000
@@ -45,14 +51,7 @@
 This file helps projectile ignore irrelevant directories during greps and other
 complex searches")
 
-
-(defun idp-get-local-ip ()
-  "Return the string representation of the local ip address."
-  (let* ((get-ip-command "ipconfig getifaddr en0")
-         (command-result (shell-command-to-string get-ip-command)))
-    (string-trim command-result)))
-
-
+;;;###autoload;
 (defun setup-idp ()
   "Setup the config/application.yml and projectile files.
 To be used on a fresh clone of the idp repo"
