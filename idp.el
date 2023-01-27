@@ -45,7 +45,7 @@
 This file helps projectile ignore irrelevant directories during greps and other
 complex searches")
 
-
+;;;###autoload
 (defun idp-get-local-ip ()
   "Return the string representation of the local ip address."
   (let* ((get-ip-command "ipconfig getifaddr en0")
