@@ -52,7 +52,7 @@ complex searches")
          (command-result (shell-command-to-string get-ip-command)))
     (string-trim command-result)))
 
-;;;###autoload
+
 (defun setup-idp ()
   "Setup the config/application.yml and projectile files.
 To be used on a fresh clone of the idp repo"
