@@ -20,11 +20,11 @@
          (command-result (shell-command-to-string get-ip-command)))
     (string-trim command-result)))
 
-(defvar idp/application-yml (string-replace "<your-local-ip>" (idp-get-local-ip) "development:
+(defun idp/get-default-application-yml ()
+  (string-replace "<your-local-ip>" (idp-get-local-ip) "development:
   config_key:
   #domain_name: <your-local-ip>:3000
-  #mailer_domain_name: <your-local-ip>:3000")
-  "String that will be used to generate / update application.yml.")
+  #mailer_domain_name: <your-local-ip>:3000"))
 
 ;; directory local variables that are useful for idp
 ;; development, such as indentation levels.
@@ -64,7 +64,7 @@ To be used on a fresh clone of the idp repo"
             projectile-filename
           (insert idp/projectile-contents))
         (with-temp-file application-yml-filename
-          (insert idp/application-yml))
+          (insert (idp/get-default-application-yml)))
         (with-temp-file dir-locals-filename
           (insert idp/dir-locals)))))
 
