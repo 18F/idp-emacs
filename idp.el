@@ -205,14 +205,14 @@ by Transient."
          (line-number (idp--transient-get-arg-value args "--line-number"))
          (filename (idp-project-filename))
          (suffix (file-name-extension filename))
-         (is-javascript (if (member suffix '("js" "ts" "jsx" "tsx"))))
+         (is-javascript (if (member suffix '("js" "ts" "jsx" "tsx")) t nil))
          (base-test-cmd (if is-javascript "npx mocha" "bundle exec rspec"))
-         (test-cmd (if line-number (concat base-test-cmd ":" line-number) base-test-cmd))
+         (test-cmd (if line-number (concat base-test-cmd " " filename ":" line-number) (concat base-test-cmd " " filename)))
          (default-directory (projectile-project-root)))
 
         (if is-javascript
             (compile test-cmd t)
-          (compile (concat show-browser test-cmd t))))
+          (compile (concat show-browser test-cmd) t)))
     (error (concat "The file '" (idp-project-filename) "' does not appear to be a test file."))))
 
 (transient-define-prefix idp-main-transient ()
