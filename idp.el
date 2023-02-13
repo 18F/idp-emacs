@@ -135,5 +135,104 @@ Will run the tests in a comint-enabled command-mode buffer"
     
     (compile cmd-str t)))
 
+
+;; Define a custom Projectile project type for the idp
+(projectile-register-project-type
+ 'identity-idp
+ '("Gemfile" "Procfile" "config" "db" "deploy" "certs" "certs.example" "pwned_passwords")
+ :project-file "Makefile"
+ :compile "make setup"
+ :run "make run")
+
+(defun idp-switched-to-project-hook ()
+  "Function that is called when Projectile switches to an identity-idp project"
+  (if (eq (projectile-project-type) 'identity-idp)
+      (message "Switched to identity-idp project!")))
+
+(add-hook 'projectile-after-switch-project-hook 'idp-switched-to-project-hook)
+(add-hook 'projectile-mode-hook 'idp-switched-to-project-hook)
+
+
+;;-------------------------------------------------------
+;; General Helpers
+;;-------------------------------------------------------
+(defun idp-project-type-p ()
+  "Responds true if the current projectile project type is identity-idp."
+  (eq (projectile-project-type) 'identity-idp))
+
+(defun idp-current-file-is-spec-p ()
+  "Responds true if the current buffer file is a test file of some kind."
+  (let ((filename (buffer-file-name))
+        (term (regexp-quote "spec")))
+    (string-match-p term filename)))
+
+(defun idp--arglist-has-partial-arg (args name)
+  (-any-p
+   (lambda (arg)
+     (string-match-p (regexp-quote name) arg))
+   args))
+
+(defun idp--transient-get-arg-value (args name)
+  (let* ((matched-item (-reduce-from
+                        (lambda
+                          (prev-arg current-arg)
+                          (if prev-arg
+                              prev-arg
+                            (if (string-match-p (regexp-quote name) current-arg)
+                                current-arg)))
+                        nil
+                        args)))
+    (if matched-item
+        (car (last (string-split matched-item (regexp-quote "=")))))))
+;;-------------------------------------------------------
+;; Custom Transient Functions
+;; ------------------------------------------------------
+(defun idp--run-all-frontend-tests ()
+  (interactive)
+  (let ((test-cmd "npx mocha"))
+    (compile test-cmd t)))
+
+(transient-define-suffix idp--run-current-spec-file-suffix ()
+  "Wrapper for running the current spec file, used with args
+by Transient."
+  (interactive)
+  (if (idp-current-file-is-spec-p)
+      (let* ((args (transient-args (oref transient-current-prefix command)))
+         (show-browser
+          (if (member "--show-browser" args)
+              "SHOW_BROWSER=true "
+            ""))
+         (line-number (idp--transient-get-arg-value args "--line-number"))
+         (filename (idp-project-filename))
+         (suffix (file-name-extension filename))
+         (is-javascript (if (member suffix '("js" "ts" "jsx" "tsx"))))
+         (base-test-cmd (if is-javascript "npx mocha" "bundle exec rspec"))
+         (test-cmd (if line-number (concat base-test-cmd ":" line-number) base-test-cmd))
+         (default-directory (projectile-project-root)))
+
+        (if is-javascript
+            (compile test-cmd t)
+          (compile (concat show-browser test-cmd t))))
+    (error (concat "The file '" (idp-project-filename) "' does not appear to be a test file."))))
+
+(transient-define-prefix idp-main-transient ()
+  "Main transient menu for IDP actions."
+  ["Login.gov IDP Actions\n"
+   ("g" "Grep within this IDP project" projectile-grep)
+   ("t" "Run test commands within this IDP project" idp-test-transient)])
+
+(transient-define-prefix idp-test-transient ()
+  "Main transiene menu for running IDP tests."
+  ["Login.gov IDP Testing Actions\n"
+   ["Commands"
+    ("f" "Run this spec file" idp--run-current-spec-file-suffix)
+    ("F" "Run frontend tests" idp--run-all-frontend-tests)
+    ]
+   ["Arguments"
+    ("-s" "Run with SHOW_BROWSER as true" "--show-browser")
+    ("-l" "Line number" "--line-number=")]
+   ]
+  :transient transient--do-exit)
+
 (provide 'idp)
 ;;; idp.el ends here
