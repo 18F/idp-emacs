@@ -33,7 +33,8 @@
 (defvar idp/dir-locals
   (prin1-to-string
    '((js2-mode . ((js2-basic-offset . 2)))
-     (typescriptreact-mode . ((typescript-indent-level . 2))))))
+     (typescriptreact-mode . ((typescript-indent-level . 2)))
+     (web-mode . ((web-mode-markup-indent-offset . 2))))))
 
 (defvar idp/projectile-contents
       (string-join
@@ -192,6 +193,7 @@ Will run the tests in a comint-enabled command-mode buffer"
   (let ((test-cmd "npx mocha"))
     (compile test-cmd t)))
 
+;;;###autoload
 (transient-define-suffix idp--run-current-spec-file-suffix ()
   "Wrapper for running the current spec file, used with args
 by Transient."
@@ -203,11 +205,19 @@ by Transient."
               "SHOW_BROWSER=true "
             ""))
          (line-number (idp--transient-get-arg-value args "--line-number"))
+         (use-active-line-number (if (member "--use-current-line-number" args) t nil))
          (filename (idp-project-filename))
          (suffix (file-name-extension filename))
          (is-javascript (if (member suffix '("js" "ts" "jsx" "tsx")) t nil))
          (base-test-cmd (if is-javascript "npx mocha" "bundle exec rspec"))
-         (test-cmd (if line-number (concat base-test-cmd " " filename ":" line-number) (concat base-test-cmd " " filename)))
+         (test-cmd
+          (cond
+           (use-active-line-number
+            (concat base-test-cmd " " filename ":" (number-to-string (line-number-at-pos))))
+           (line-number
+            (concat base-test-cmd " " filename ":" line-number))
+           (t
+            (concat base-test-cmd " " filename))))
          (default-directory (projectile-project-root)))
 
         (if is-javascript
@@ -215,12 +225,14 @@ by Transient."
           (compile (concat show-browser test-cmd) t)))
     (error (concat "The file '" (idp-project-filename) "' does not appear to be a test file."))))
 
+;;;###autoload
 (transient-define-prefix idp-main-transient ()
   "Main transient menu for IDP actions."
   ["Login.gov IDP Actions\n"
    ("g" "Grep within this IDP project" projectile-grep)
    ("t" "Run test commands within this IDP project" idp-test-transient)])
 
+;;;###autoload
 (transient-define-prefix idp-test-transient ()
   "Main transiene menu for running IDP tests."
   ["Login.gov IDP Testing Actions\n"
@@ -230,9 +242,9 @@ by Transient."
     ]
    ["Arguments"
     ("-s" "Run with SHOW_BROWSER as true" "--show-browser")
-    ("-l" "Line number" "--line-number=")]
-   ]
-  :transient transient--do-exit)
+    ("-l" "Use the current line number at cursor" "--use-current-line-number")
+    ("-L" "Line number" "--line-number=")]
+   ])
 
 (provide 'idp)
 ;;; idp.el ends here
