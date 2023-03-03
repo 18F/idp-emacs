@@ -188,6 +188,7 @@ Will run the tests in a comint-enabled command-mode buffer"
 ;;-------------------------------------------------------
 ;; Custom Transient Functions
 ;; ------------------------------------------------------
+;;;###autoload
 (defun idp--run-all-frontend-tests ()
   (interactive)
   (let ((test-cmd "npx mocha"))
@@ -230,7 +231,8 @@ by Transient."
   "Main transient menu for IDP actions."
   ["Login.gov IDP Actions\n"
    ("g" "Grep within this IDP project" projectile-grep)
-   ("t" "Run test commands within this IDP project" idp-test-transient)])
+   ("t" "Run test commands within this IDP project" idp-test-transient)
+   ("f" "Find file(s) within this project" projectile-find-file)])
 
 ;;;###autoload
 (transient-define-prefix idp-test-transient ()
